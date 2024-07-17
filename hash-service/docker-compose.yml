@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      DB_HOST: postgres
+      POSTGRES_USER: jeantik
+      POSTGRES_PASSWORD: qwerty
+      POSTGRES_DB: hash-service-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+
+  flyway:
+    build:
+      context: .
+      dockerfile: Dockerfile.flyway
+    image: flyway/flyway:7
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/hash-service-db
+      FLYWAY_USER: jeantik
+      FLYWAY_PASSWORD: qwerty
+    volumes:
+      - ./db/migration:/flyway/sql
+    depends_on:
+      - postgres
+
+  hash-service:
+    build: ./
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis

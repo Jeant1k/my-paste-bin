@@ -1,0 +1,9 @@
+FROM flyway/flyway:7
+
+# Копирование wait-for-it.sh
+COPY ./scripts/wait-for-it.sh /usr/local/bin/wait-for-it.sh
+
+USER root
+RUN chmod +x /usr/local/bin/wait-for-it.sh
+
+ENTRYPOINT ["/usr/local/bin/wait-for-it.sh", "postgres:5432", "--", "flyway", "migrate"]
