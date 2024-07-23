@@ -1,10 +1,12 @@
 db:
-  host: "postgres"
+  host: "hs-postgres"
   port: 5432
-  user: "jeantik"
-  password: "qwerty"
+  user: "${DB_USER}"
+  password: "${DB_PASSWORD}"
   name: "hash-service-db"
-
+ 
 redis:
-  host: "redis"
+  host: "hs-redis"
   port: 6379
+  # user: "${REDIS_USER}"
+  # password: "${REDIS_PASSWORD}"

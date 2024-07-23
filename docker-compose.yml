@@ -1,0 +1,89 @@
+version: '3.8'
+
+networks:
+  my-paste-bin:
+    driver: bridge
+
+services:
+  hash-service:
+    build: ./hash-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - hs-postgres
+      - hs-redis
+    networks:
+      - my-paste-bin
+    environment:
+      DB_USER: jeantik
+      DB_PASSWORD: qwerty
+      FLYWAY_URL: jdbc:postgresql://hs-postgres:5432/hash-service-db
+      FLYWAY_USER: jeantik
+      FLYWAY_PASSWORD: qwerty
+
+  new-note-service:
+    build: ./new-note-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - nns-postgres
+    networks:
+      - my-paste-bin
+    env_file:
+      - .env
+
+  hs-postgres:
+    image: postgres:13
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./hs-postgres-data:/var/lib/postgresql/data
+    networks:
+      - my-paste-bin
+
+  hs-redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+    networks:
+      - my-paste-bin
+
+  hs-flyway:
+    image: flyway/flyway:7
+    volumes:
+      - ./hash-service/db/migration:/flyway/sql
+    depends_on:
+      - hs-postgres
+    command: -url=jdbc:postgresql://hs-postgres:5432/hash-service-db -user=jeantik -password=qwerty migrate
+    networks:
+      - my-paste-bin
+
+  nns-postgres:
+    image: postgres:13
+    environment:
+      DB_HOST: postgres
+      POSTGRES_DB: new-note-service-db
+      POSTGRES_USER: jeantik
+      POSTGRES_PASSWORD: qwerty
+    ports:
+      - "5433:5433"
+    volumes:
+      - ./nns-postgres-data:/var/lib/postgresql/data
+      - ./postgresql.conf:/var/lib/postgresql/data/postgresql.conf 
+    command: ["postgres", "-c", "config_file=/var/lib/postgresql/data/postgresql.conf"]
+    networks:
+      - my-paste-bin
+
+  nns-flyway:
+    image: flyway/flyway:7
+    environment:
+      FLYWAY_URL: jdbc:postgresql://nns-postgres:5433/new-note-service-db
+      FLYWAY_USER: jeantik
+      FLYWAY_PASSWORD: qwerty
+    volumes:
+      - ./new-note-service/db/migration:/flyway/sql
+    depends_on:
+      - nns-postgres
+    command: -url=jdbc:postgresql://nns-postgres:5433/new-note-service-db -user=jeantik -password=qwerty migrate
+    networks:
+      - my-paste-bin

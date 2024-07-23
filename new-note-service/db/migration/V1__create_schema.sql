@@ -1,0 +1,5 @@
+CREATE TABLE notes (
+    note_id SERIAL PRIMARY KEY,
+    hash VARCHAR(16) NOT NULL UNIQUE,
+    url TEXT NOT NULL
+);

@@ -12,11 +12,13 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     libcurl4-openssl-dev \
     libhiredis-dev \
+    tzdata \
     git
 
 WORKDIR /app
 
-COPY . .
+# Установка часового пояса
+RUN ln -fs /usr/share/zoneinfo/Europe/Moscow /etc/localtime && dpkg-reconfigure -f noninteractive tzdata
 
 # Установка spdlog
 RUN git clone https://github.com/gabime/spdlog.git && cd spdlog && mkdir build && cd build && cmake .. && make && make install
@@ -36,11 +38,14 @@ ENV CMAKE_PREFIX_PATH="/usr/local;/usr/local/include/yaml-cpp"
 # Установка cppcodec
 RUN git clone https://github.com/tplgy/cppcodec.git /usr/local/include/cppcodec
 
-# Копирование wait-for-it.sh
-COPY ./scripts/wait-for-it.sh /usr/local/bin/wait-for-it.sh
-RUN chmod +x /usr/local/bin/wait-for-it.sh
+COPY . .
+
+# Устанавливаем временную зону на UTC+03:00 (Москва)
+RUN ln -sf /usr/share/zoneinfo/Etc/GMT-3 /etc/localtime && echo "Etc/GMT-3" > /etc/timezone
+
+# Устанавливаем переменные окружения
+ENV TZ=Etc/GMT-3
 
 RUN mkdir build && cd build && cmake .. && make
 
-# wait-for-it.sh для ожидания готовности базы данных
-CMD ["/usr/local/bin/wait-for-it.sh", "postgres:5432", "--", "/usr/local/bin/wait-for-it.sh", "redis:6379", "--", "./build/hash-service"]
+CMD ["./build/hash-service"]

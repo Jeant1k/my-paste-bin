@@ -1,9 +1,11 @@
-#include <iostream>
 #include <httplib.h>
-#include <yaml-cpp/yaml.h>
 #include <spdlog/spdlog.h>
+#include <yaml-cpp/yaml.h>
+#include <aws/core/Aws.h>
 
-#include "../include/hash_service.hpp"
+#include "../include/database.hpp"
+#include "../include/new_note_service.hpp"
+#include "../include/yandex_object_storage.hpp"
 
 std::string getEnvVar(const std::string &key) {
     const char *val = std::getenv(key.c_str());
@@ -26,27 +28,28 @@ int main() {
         int redis_port = config["redis"]["port"].as<int>();
  
         Database db(db_host, db_port, db_user, db_password, db_name);
-        HashService hashService(db, redis_host, redis_port);
+        YandexObjectStorage yandex("your-bucket-name");
+        NewNoteService newNoteService(db, yandex, "http://hash-service:8080");
  
         httplib::Server svr;
  
-        svr.Get("/hash", [&](const httplib::Request &req, httplib::Response &res) {
-            spdlog::info("Received request for /hash");
-            std::string hash = hashService.getHash();
-            if (hash.empty()) {
-                res.status = 500;
-                res.set_content("No available hashes", "text/plain");
-                spdlog::error("No available hashes");
-            } else {
+        svr.Post("/notes", [&](const httplib::Request &req, httplib::Response &res) {
+            try {
+                std::string text = req.body;
+                std::string hash = newNoteService.createNote(text);
                 res.set_content(hash, "text/plain");
-                spdlog::info("Returning hash: {}", hash);
+                spdlog::info("Note created with hash: {}", hash);
+            } catch (const std::exception &e) {
+                res.status = 500;
+                res.set_content(e.what(), "text/plain");
+                spdlog::error("Error creating note: {}", e.what());
             }
         });
  
-        spdlog::info("Starting server on port 8080");
         svr.listen("0.0.0.0", 8080);
     } catch (const std::exception &e) {
-        spdlog::error("Error: {}", e.what());
+        spdlog::error("Error initializing application: {}", e.what());
         return 1;
     }
+    return 0;
 }

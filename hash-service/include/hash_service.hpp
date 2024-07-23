@@ -3,6 +3,14 @@
 #include <string>
 #include <memory>
 #include <sw/redis++/redis++.h>
+#include <thread>
+#include <chrono>
+#include <sw/redis++/redis++.h>
+#include <openssl/rand.h>
+#include <spdlog/spdlog.h>
+#include <iostream>
+#include <cppcodec/base64_rfc4648.hpp>
+#include <stdexcept>
 
 #include "../include/database.hpp"
 

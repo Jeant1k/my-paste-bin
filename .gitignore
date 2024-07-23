@@ -1,2 +1,4 @@
 .vscode
-hash-service/postgres-data
+hs-postgres-data
+object-storage-cli
+nns-postgres-data

@@ -1,0 +1,15 @@
+database:
+  host: "nns-postgres"
+  port: 5433
+  user: "${DB_USER}"
+  password: "${DB_PASSWORD}"
+  name: "new-note-service-db"
+
+hash_service:
+  url: "http://hash-service:8080/hash"
+
+yandex:
+  bucket: "my-paste-bin"
+
+server:
+  port: 8081
